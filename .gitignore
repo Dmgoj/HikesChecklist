@@ -1,0 +1,22 @@
+# .NET
+server/**/bin/
+server/**/obj/
+*.user
+
+# SQLite dev database
+server/HikesChecklist.Api/*.db
+server/HikesChecklist.Api/*.db-shm
+server/HikesChecklist.Api/*.db-wal
+
+# GeoNames ingestion cache
+server/HikesChecklist.GeoNamesIngest/data/
+
+# Node / client
+client/node_modules/
+client/dist/
+client/.env.local
+
+# IDE
+.vs/
+.idea/
+*.swp

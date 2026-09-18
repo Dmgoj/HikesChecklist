@@ -1,0 +1,6 @@
+<Solution>
+  <Folder Name="/server/">
+    <Project Path="server/HikesChecklist.Api/HikesChecklist.Api.csproj" />
+    <Project Path="server/HikesChecklist.GeoNamesIngest/HikesChecklist.GeoNamesIngest.csproj" />
+  </Folder>
+</Solution>
