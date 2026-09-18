@@ -1,0 +1,4 @@
+# Credits
+
+Mountain and peak data is sourced from [GeoNames](https://www.geonames.org/), licensed under
+[Creative Commons Attribution 4.0](https://creativecommons.org/licenses/by/4.0/).
