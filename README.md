@@ -50,3 +50,30 @@ Client runs at `http://localhost:5173`.
 - The SQLite dev database lives at `server/HikesChecklist.Api/hikeschecklist.dev.db` (gitignored).
 - JWTs are valid for 7 days (see `Jwt:ExpiryMinutes` in `appsettings.json`) — there's no refresh-token flow yet, just re-login after expiry.
 - Map view (Leaflet) is planned but not yet implemented; peak detail pages currently show a placeholder.
+
+## Troubleshooting
+
+### `gh` (GitHub CLI) not found on Windows, even though it's installed
+
+On some Windows setups `gh` is installed but its folder never made it into `PATH` (e.g. installed
+before the machine's `PATH` was refreshed, or via an installer that didn't register it). Symptoms:
+`gh` works fine in one shell but `'gh' is not recognized` in another (PowerShell, Git Bash, etc.).
+
+1. Confirm it's actually installed and find it:
+   ```powershell
+   Test-Path "C:\Program Files\GitHub CLI\gh.exe"
+   ```
+2. If found but not on `PATH`, add it permanently (persists across new terminals; requires a new
+   shell/terminal restart to take effect):
+   ```powershell
+   [Environment]::SetEnvironmentVariable(
+     "Path",
+     "$([Environment]::GetEnvironmentVariable('Path', 'Machine'));C:\Program Files\GitHub CLI",
+     "Machine"
+   )
+   ```
+   (Run as Administrator, or use `"User"` scope instead of `"Machine"` if you don't have admin rights.)
+3. As a one-off workaround without editing `PATH`, call it by full path:
+   ```powershell
+   & "C:\Program Files\GitHub CLI\gh.exe" auth status
+   ```
