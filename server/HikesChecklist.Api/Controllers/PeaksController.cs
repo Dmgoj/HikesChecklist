@@ -16,6 +16,8 @@ public class PeaksController(AppDbContext db) : ControllerBase
         [FromQuery] string? country,
         [FromQuery] int? minElevation,
         [FromQuery] int? maxElevation,
+        [FromQuery] string sortBy = "name",
+        [FromQuery] string sortDir = "asc",
         [FromQuery] int page = 1,
         [FromQuery] int pageSize = 20)
     {
@@ -54,8 +56,19 @@ public class PeaksController(AppDbContext db) : ControllerBase
 
         var totalCount = await query.CountAsync();
 
+        var descending = string.Equals(sortDir, "desc", StringComparison.OrdinalIgnoreCase);
+
+        query = sortBy.ToLowerInvariant() switch
+        {
+            "elevation" => descending
+                ? query.OrderByDescending(p => p.ElevationMeters.HasValue).ThenByDescending(p => p.ElevationMeters)
+                : query.OrderByDescending(p => p.ElevationMeters.HasValue).ThenBy(p => p.ElevationMeters),
+            _ => descending
+                ? query.OrderByDescending(p => p.Name)
+                : query.OrderBy(p => p.Name),
+        };
+
         var items = await query
-            .OrderBy(p => p.Name)
             .Skip((page - 1) * pageSize)
             .Take(pageSize)
             .Select(p => new PeakSummaryDto(p.Id, p.Name, p.CountryCode, p.ElevationMeters))
