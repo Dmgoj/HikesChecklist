@@ -54,7 +54,7 @@ export function SearchPage() {
       <h1>Search Peaks</h1>
       <input
         type="text"
-        placeholder="Search by name (e.g. Everest)"
+        placeholder="Search by name, optionally with a country (e.g. Dolomiti Italy)"
         value={query}
         onChange={(e) => {
           setQuery(e.target.value);

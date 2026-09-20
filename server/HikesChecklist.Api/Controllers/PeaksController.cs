@@ -1,5 +1,6 @@
 using HikesChecklist.Api.Data;
 using HikesChecklist.Api.Dtos;
+using HikesChecklist.Api.Services;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
@@ -24,11 +25,21 @@ public class PeaksController(AppDbContext db) : ControllerBase
         page = Math.Max(page, 1);
         pageSize = Math.Clamp(pageSize, 1, 100);
 
-        var query = db.Peaks.AsNoTracking().Where(p => EF.Functions.Like(p.Name, $"%{q}%"));
+        var effectiveCountry = country;
+        var nameTerm = q;
 
-        if (!string.IsNullOrWhiteSpace(country))
+        if (string.IsNullOrWhiteSpace(effectiveCountry))
         {
-            query = query.Where(p => p.CountryCode == country);
+            var parsed = PeakSearchQueryParser.Parse(q);
+            nameTerm = parsed.NameTerm;
+            effectiveCountry = parsed.CountryCode;
+        }
+
+        var query = db.Peaks.AsNoTracking().Where(p => EF.Functions.Like(p.Name, $"%{nameTerm}%"));
+
+        if (!string.IsNullOrWhiteSpace(effectiveCountry))
+        {
+            query = query.Where(p => p.CountryCode == effectiveCountry);
         }
 
         var totalCount = await query.CountAsync();
