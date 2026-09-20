@@ -1,10 +1,21 @@
 import { useEffect, useState } from "react";
-import { searchPeaks } from "../api/peaksApi";
+import { searchPeaks, getCountries } from "../api/peaksApi";
 import { getVisitedPeaks } from "../api/visitedPeaksApi";
 import { getBucketList } from "../api/bucketListApi";
 import { PeakCard } from "../components/PeakCard";
 import { useAuth } from "../auth/useAuth";
-import type { PeakSummary } from "../types";
+import type { CountryOption, PeakSummary } from "../types";
+
+const ELEVATION_BUCKETS = [
+  { label: "Any elevation", min: undefined, max: undefined },
+  { label: "< 1000m", min: undefined, max: 1000 },
+  { label: "1000 - 2000m", min: 1000, max: 2000 },
+  { label: "2000 - 3000m", min: 2000, max: 3000 },
+  { label: "3000 - 4000m", min: 3000, max: 4000 },
+  { label: "4000 - 5000m", min: 4000, max: 5000 },
+  { label: "5000 - 6000m", min: 5000, max: 6000 },
+  { label: "6000m+", min: 6000, max: undefined },
+] as const;
 
 export function SearchPage() {
   const [query, setQuery] = useState("");
@@ -14,8 +25,15 @@ export function SearchPage() {
   const [loading, setLoading] = useState(false);
   const [visitedIds, setVisitedIds] = useState<Set<number>>(new Set());
   const [bucketListIds, setBucketListIds] = useState<Set<number>>(new Set());
+  const [countries, setCountries] = useState<CountryOption[]>([]);
+  const [countryFilter, setCountryFilter] = useState("");
+  const [elevationBucketIndex, setElevationBucketIndex] = useState(0);
   const { isAuthenticated } = useAuth();
   const pageSize = 20;
+
+  useEffect(() => {
+    getCountries().then(setCountries);
+  }, []);
 
   useEffect(() => {
     if (isAuthenticated) {
@@ -27,16 +45,25 @@ export function SearchPage() {
     }
   }, [isAuthenticated]);
 
+  const hasFilter = countryFilter !== "" || elevationBucketIndex !== 0;
+  const canSearch = query.trim().length >= 2 || hasFilter;
+
   useEffect(() => {
-    if (query.trim().length < 2) {
+    if (!canSearch) {
       setResults([]);
       setTotalCount(0);
       return;
     }
 
+    const bucket = ELEVATION_BUCKETS[elevationBucketIndex];
+
     const timeout = setTimeout(() => {
       setLoading(true);
-      searchPeaks(query, page, pageSize)
+      searchPeaks(query.trim(), page, pageSize, {
+        country: countryFilter || undefined,
+        minElevation: bucket.min,
+        maxElevation: bucket.max,
+      })
         .then((res) => {
           setResults(res.items);
           setTotalCount(res.totalCount);
@@ -45,7 +72,7 @@ export function SearchPage() {
     }, 300);
 
     return () => clearTimeout(timeout);
-  }, [query, page]);
+  }, [query, page, countryFilter, elevationBucketIndex, canSearch]);
 
   const totalPages = Math.max(1, Math.ceil(totalCount / pageSize));
 
@@ -54,7 +81,7 @@ export function SearchPage() {
       <h1>Search Peaks</h1>
       <input
         type="text"
-        placeholder="Search by name, optionally with a country (e.g. Dolomiti Italy)"
+        placeholder="Search by name (e.g. Everest), or leave blank and use the filters below"
         value={query}
         onChange={(e) => {
           setQuery(e.target.value);
@@ -62,8 +89,37 @@ export function SearchPage() {
         }}
         style={{ width: "100%", padding: "0.5rem" }}
       />
+      <div style={{ display: "flex", gap: "0.5rem", marginTop: "0.5rem" }}>
+        <select
+          value={countryFilter}
+          onChange={(e) => {
+            setCountryFilter(e.target.value);
+            setPage(1);
+          }}
+        >
+          <option value="">All countries</option>
+          {countries.map((c) => (
+            <option key={c.code} value={c.code}>
+              {c.name}
+            </option>
+          ))}
+        </select>
+        <select
+          value={elevationBucketIndex}
+          onChange={(e) => {
+            setElevationBucketIndex(Number(e.target.value));
+            setPage(1);
+          }}
+        >
+          {ELEVATION_BUCKETS.map((bucket, index) => (
+            <option key={bucket.label} value={index}>
+              {bucket.label}
+            </option>
+          ))}
+        </select>
+      </div>
       {loading && <p>Searching...</p>}
-      {!loading && query.trim().length >= 2 && results.length === 0 && <p>No peaks found.</p>}
+      {!loading && canSearch && results.length === 0 && <p>No peaks found.</p>}
       <div style={{ marginTop: "1rem" }}>
         {results.map((peak) => (
           <PeakCard

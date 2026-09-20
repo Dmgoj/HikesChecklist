@@ -44,6 +44,11 @@ export interface BucketListEntry {
   countryCode: string;
 }
 
+export interface CountryOption {
+  code: string;
+  name: string;
+}
+
 export interface AuthResponse {
   token: string;
   expiresAt: string;
