@@ -4,6 +4,7 @@ import { LoginPage } from "./pages/LoginPage";
 import { RegisterPage } from "./pages/RegisterPage";
 import { SearchPage } from "./pages/SearchPage";
 import { VisitedListPage } from "./pages/VisitedListPage";
+import { BucketListPage } from "./pages/BucketListPage";
 import { PeakDetailPage } from "./pages/PeakDetailPage";
 import { ProtectedRoute } from "./components/ProtectedRoute";
 
@@ -18,7 +19,10 @@ export const router = createBrowserRouter([
       { path: "peaks/:id", element: <PeakDetailPage /> },
       {
         element: <ProtectedRoute />,
-        children: [{ path: "visited", element: <VisitedListPage /> }],
+        children: [
+          { path: "visited", element: <VisitedListPage /> },
+          { path: "bucket-list", element: <BucketListPage /> },
+        ],
       },
     ],
   },

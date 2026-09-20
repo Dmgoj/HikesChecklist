@@ -14,6 +14,7 @@ export function NavBar() {
     <nav style={{ display: "flex", gap: "1rem", padding: "1rem", borderBottom: "1px solid #ccc" }}>
       <Link to="/">Search</Link>
       {isAuthenticated && <Link to="/visited">My Visited Peaks</Link>}
+      {isAuthenticated && <Link to="/bucket-list">Bucket List</Link>}
       <div style={{ marginLeft: "auto", display: "flex", gap: "1rem" }}>
         {isAuthenticated ? (
           <>

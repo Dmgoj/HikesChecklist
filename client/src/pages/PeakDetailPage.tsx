@@ -2,8 +2,10 @@ import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import { getPeak } from "../api/peaksApi";
 import { getVisitedPeaks } from "../api/visitedPeaksApi";
+import { getBucketList } from "../api/bucketListApi";
 import { PeakMap } from "../components/PeakMap";
 import { VisitedToggleButton } from "../components/VisitedToggleButton";
+import { BucketListToggleButton } from "../components/BucketListToggleButton";
 import { useAuth } from "../auth/useAuth";
 import type { PeakDetail } from "../types";
 
@@ -11,6 +13,7 @@ export function PeakDetailPage() {
   const { id } = useParams<{ id: string }>();
   const [peak, setPeak] = useState<PeakDetail | null>(null);
   const [visited, setVisited] = useState(false);
+  const [onBucketList, setOnBucketList] = useState(false);
   const [loading, setLoading] = useState(true);
   const { isAuthenticated } = useAuth();
 
@@ -22,11 +25,15 @@ export function PeakDetailPage() {
     const visitedPromise = isAuthenticated
       ? getVisitedPeaks().then((list) => list.some((v) => v.peakId === Number(id)))
       : Promise.resolve(false);
+    const bucketListPromise = isAuthenticated
+      ? getBucketList().then((list) => list.some((b) => b.peakId === Number(id)))
+      : Promise.resolve(false);
 
-    Promise.all([peakPromise, visitedPromise])
-      .then(([peakResult, visitedResult]) => {
+    Promise.all([peakPromise, visitedPromise, bucketListPromise])
+      .then(([peakResult, visitedResult, bucketListResult]) => {
         setPeak(peakResult);
         setVisited(visitedResult);
+        setOnBucketList(bucketListResult);
       })
       .finally(() => setLoading(false));
   }, [id, isAuthenticated]);
@@ -43,7 +50,25 @@ export function PeakDetailPage() {
     <div style={{ maxWidth: 640, margin: "2rem auto" }}>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
         <h1>{peak.name}</h1>
-        <VisitedToggleButton key={peak.id} peakId={peak.id} initialVisited={visited} onChange={setVisited} />
+        <div style={{ display: "flex", gap: "0.5rem" }}>
+          <BucketListToggleButton
+            key={`bucket-${peak.id}-${onBucketList}`}
+            peakId={peak.id}
+            initialOnList={onBucketList}
+            onChange={setOnBucketList}
+          />
+          <VisitedToggleButton
+            key={`visited-${peak.id}`}
+            peakId={peak.id}
+            initialVisited={visited}
+            onChange={(isVisited) => {
+              setVisited(isVisited);
+              if (isVisited) {
+                setOnBucketList(false);
+              }
+            }}
+          />
+        </div>
       </div>
       <ul>
         <li>Country: {peak.countryCode}</li>

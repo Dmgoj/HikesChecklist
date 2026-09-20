@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { searchPeaks } from "../api/peaksApi";
 import { getVisitedPeaks } from "../api/visitedPeaksApi";
+import { getBucketList } from "../api/bucketListApi";
 import { PeakCard } from "../components/PeakCard";
 import { useAuth } from "../auth/useAuth";
 import type { PeakSummary } from "../types";
@@ -12,14 +13,17 @@ export function SearchPage() {
   const [page, setPage] = useState(1);
   const [loading, setLoading] = useState(false);
   const [visitedIds, setVisitedIds] = useState<Set<number>>(new Set());
+  const [bucketListIds, setBucketListIds] = useState<Set<number>>(new Set());
   const { isAuthenticated } = useAuth();
   const pageSize = 20;
 
   useEffect(() => {
     if (isAuthenticated) {
       getVisitedPeaks().then((visited) => setVisitedIds(new Set(visited.map((v) => v.peakId))));
+      getBucketList().then((bucketList) => setBucketListIds(new Set(bucketList.map((b) => b.peakId))));
     } else {
       setVisitedIds(new Set());
+      setBucketListIds(new Set());
     }
   }, [isAuthenticated]);
 
@@ -62,7 +66,12 @@ export function SearchPage() {
       {!loading && query.trim().length >= 2 && results.length === 0 && <p>No peaks found.</p>}
       <div style={{ marginTop: "1rem" }}>
         {results.map((peak) => (
-          <PeakCard key={peak.id} peak={peak} visited={visitedIds.has(peak.id)} />
+          <PeakCard
+            key={peak.id}
+            peak={peak}
+            visited={visitedIds.has(peak.id)}
+            onBucketList={bucketListIds.has(peak.id)}
+          />
         ))}
       </div>
       {totalCount > pageSize && (

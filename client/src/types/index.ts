@@ -35,6 +35,15 @@ export interface VisitedPeak {
   notes: string | null;
 }
 
+export interface BucketListEntry {
+  peakId: number;
+  peakName: string;
+  latitude: number;
+  longitude: number;
+  elevationMeters: number | null;
+  countryCode: string;
+}
+
 export interface AuthResponse {
   token: string;
   expiresAt: string;
