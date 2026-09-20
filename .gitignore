@@ -11,6 +11,9 @@ server/HikesChecklist.Api/*.db-wal
 # GeoNames ingestion cache
 server/HikesChecklist.GeoNamesIngest/data/
 
+# User-uploaded profile pictures
+server/HikesChecklist.Api/App_Data/
+
 # Node / client
 client/node_modules/
 client/dist/
