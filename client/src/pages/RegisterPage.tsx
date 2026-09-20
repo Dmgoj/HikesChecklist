@@ -1,6 +1,7 @@
 import { useState, type FormEvent } from "react";
 import { useNavigate } from "react-router-dom";
 import { login as loginRequest, register } from "../api/authApi";
+import { ApiError } from "../api/client";
 import { useAuth } from "../auth/useAuth";
 
 export function RegisterPage() {
@@ -20,8 +21,8 @@ export function RegisterPage() {
       const result = await loginRequest(email, password);
       login(result.token, result.email);
       navigate("/");
-    } catch {
-      setError("Could not register. Password must be at least 8 characters.");
+    } catch (err) {
+      setError(err instanceof ApiError ? err.message : "Something went wrong.");
     } finally {
       setSubmitting(false);
     }

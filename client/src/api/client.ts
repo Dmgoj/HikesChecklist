@@ -22,6 +22,34 @@ export function setToken(token: string | null): void {
   }
 }
 
+function extractErrorMessage(body: string): string | null {
+  if (!body) {
+    return null;
+  }
+
+  try {
+    const parsed = JSON.parse(body);
+    if (Array.isArray(parsed)) {
+      return parsed.join(" ");
+    }
+    if (typeof parsed === "string") {
+      return parsed;
+    }
+    if (parsed && typeof parsed === "object") {
+      if (typeof parsed.title === "string") {
+        return parsed.title;
+      }
+      if (parsed.errors && typeof parsed.errors === "object") {
+        return Object.values(parsed.errors).flat().join(" ");
+      }
+    }
+  } catch {
+    return body;
+  }
+
+  return body;
+}
+
 export async function apiFetch<T>(path: string, options: RequestInit = {}): Promise<T> {
   const token = getToken();
   const headers = new Headers(options.headers);
@@ -39,7 +67,7 @@ export async function apiFetch<T>(path: string, options: RequestInit = {}): Prom
 
   if (!response.ok) {
     const text = await response.text();
-    throw new ApiError(response.status, text || response.statusText);
+    throw new ApiError(response.status, extractErrorMessage(text) || response.statusText);
   }
 
   if (response.status === 204) {
