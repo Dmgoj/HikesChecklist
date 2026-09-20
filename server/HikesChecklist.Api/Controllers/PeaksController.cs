@@ -12,34 +12,44 @@ public class PeaksController(AppDbContext db) : ControllerBase
 {
     [HttpGet("search")]
     public async Task<ActionResult<PeakSearchResultDto>> Search(
-        [FromQuery] string q,
+        [FromQuery] string? q,
         [FromQuery] string? country,
+        [FromQuery] int? minElevation,
+        [FromQuery] int? maxElevation,
         [FromQuery] int page = 1,
         [FromQuery] int pageSize = 20)
     {
-        if (string.IsNullOrWhiteSpace(q))
+        var hasNameQuery = !string.IsNullOrWhiteSpace(q);
+        var hasFilter = !string.IsNullOrWhiteSpace(country) || minElevation.HasValue || maxElevation.HasValue;
+
+        if (!hasNameQuery && !hasFilter)
         {
-            return BadRequest("Query parameter 'q' is required.");
+            return BadRequest("Provide a search query, a country, or an elevation filter.");
         }
 
         page = Math.Max(page, 1);
         pageSize = Math.Clamp(pageSize, 1, 100);
 
-        var effectiveCountry = country;
-        var nameTerm = q;
+        var query = db.Peaks.AsNoTracking().AsQueryable();
 
-        if (string.IsNullOrWhiteSpace(effectiveCountry))
+        if (hasNameQuery)
         {
-            var parsed = PeakSearchQueryParser.Parse(q);
-            nameTerm = parsed.NameTerm;
-            effectiveCountry = parsed.CountryCode;
+            query = query.Where(p => EF.Functions.Like(p.Name, $"%{q}%"));
         }
 
-        var query = db.Peaks.AsNoTracking().Where(p => EF.Functions.Like(p.Name, $"%{nameTerm}%"));
-
-        if (!string.IsNullOrWhiteSpace(effectiveCountry))
+        if (!string.IsNullOrWhiteSpace(country))
         {
-            query = query.Where(p => p.CountryCode == effectiveCountry);
+            query = query.Where(p => p.CountryCode == country);
+        }
+
+        if (minElevation.HasValue)
+        {
+            query = query.Where(p => p.ElevationMeters != null && p.ElevationMeters >= minElevation.Value);
+        }
+
+        if (maxElevation.HasValue)
+        {
+            query = query.Where(p => p.ElevationMeters != null && p.ElevationMeters < maxElevation.Value);
         }
 
         var totalCount = await query.CountAsync();
@@ -52,6 +62,24 @@ public class PeaksController(AppDbContext db) : ControllerBase
             .ToListAsync();
 
         return Ok(new PeakSearchResultDto(items, page, pageSize, totalCount));
+    }
+
+    [HttpGet("countries")]
+    public async Task<ActionResult<IReadOnlyList<CountryOptionDto>>> GetCountries()
+    {
+        var codes = await db.Peaks
+            .AsNoTracking()
+            .Where(p => p.CountryCode != "")
+            .Select(p => p.CountryCode)
+            .Distinct()
+            .ToListAsync();
+
+        var countries = codes
+            .Select(code => new CountryOptionDto(code, CountryNames.ByCode.GetValueOrDefault(code, code)))
+            .OrderBy(c => c.Name)
+            .ToList();
+
+        return Ok(countries);
     }
 
     [HttpGet("{id:int}")]
