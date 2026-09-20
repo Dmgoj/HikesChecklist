@@ -1,11 +1,12 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import { getVisitedPeaks, unmarkVisited } from "../api/visitedPeaksApi";
+import { getVisitedPeaks, unmarkVisited, updateVisited } from "../api/visitedPeaksApi";
 import type { VisitedPeak } from "../types";
 
 export function VisitedListPage() {
   const [visited, setVisited] = useState<VisitedPeak[]>([]);
   const [loading, setLoading] = useState(true);
+  const [editingPeakId, setEditingPeakId] = useState<number | null>(null);
 
   useEffect(() => {
     load();
@@ -23,6 +24,15 @@ export function VisitedListPage() {
     setVisited((prev) => prev.filter((v) => v.peakId !== peakId));
   }
 
+  async function handleDateChange(peak: VisitedPeak, newDate: string) {
+    setEditingPeakId(null);
+    if (!newDate || newDate === peak.visitedOn) {
+      return;
+    }
+    const updated = await updateVisited(peak.peakId, newDate, peak.notes ?? undefined);
+    setVisited((prev) => prev.map((v) => (v.peakId === peak.peakId ? updated : v)));
+  }
+
   if (loading) {
     return <p>Loading...</p>;
   }
@@ -37,7 +47,30 @@ export function VisitedListPage() {
             <Link to={`/peaks/${v.peakId}`}>{v.peakName}</Link>
             <div style={{ color: "#666", fontSize: "0.9em" }}>
               {v.countryCode}
-              {v.elevationMeters ? ` · ${v.elevationMeters}m` : ""} · Visited {v.visitedOn}
+              {v.elevationMeters ? ` · ${v.elevationMeters}m` : ""} · Visited{" "}
+              {editingPeakId === v.peakId ? (
+                <input
+                  type="date"
+                  defaultValue={v.visitedOn}
+                  autoFocus
+                  onBlur={(e) => handleDateChange(v, e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") {
+                      handleDateChange(v, e.currentTarget.value);
+                    } else if (e.key === "Escape") {
+                      setEditingPeakId(null);
+                    }
+                  }}
+                />
+              ) : (
+                <span
+                  onDoubleClick={() => setEditingPeakId(v.peakId)}
+                  title="Double-click to edit"
+                  style={{ cursor: "pointer", textDecoration: "underline dotted" }}
+                >
+                  {v.visitedOn}
+                </span>
+              )}
               {v.notes ? ` · ${v.notes}` : ""}
             </div>
           </div>
