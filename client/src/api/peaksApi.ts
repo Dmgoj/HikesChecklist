@@ -1,10 +1,15 @@
 import { apiFetch } from "./client";
 import type { CountryOption, PeakDetail, PeakSearchResult } from "../types";
 
+export type SortBy = "name" | "elevation";
+export type SortDir = "asc" | "desc";
+
 export interface SearchFilters {
   country?: string;
   minElevation?: number;
   maxElevation?: number;
+  sortBy?: SortBy;
+  sortDir?: SortDir;
 }
 
 export function searchPeaks(
@@ -22,6 +27,12 @@ export function searchPeaks(
   }
   if (filters.maxElevation !== undefined) {
     params.set("maxElevation", String(filters.maxElevation));
+  }
+  if (filters.sortBy) {
+    params.set("sortBy", filters.sortBy);
+  }
+  if (filters.sortDir) {
+    params.set("sortDir", filters.sortDir);
   }
   return apiFetch(`/api/peaks/search?${params.toString()}`);
 }

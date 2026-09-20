@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { searchPeaks, getCountries } from "../api/peaksApi";
+import { searchPeaks, getCountries, type SortBy, type SortDir } from "../api/peaksApi";
 import { getVisitedPeaks } from "../api/visitedPeaksApi";
 import { getBucketList } from "../api/bucketListApi";
 import { PeakCard } from "../components/PeakCard";
@@ -28,8 +28,27 @@ export function SearchPage() {
   const [countries, setCountries] = useState<CountryOption[]>([]);
   const [countryFilter, setCountryFilter] = useState("");
   const [elevationBucketIndex, setElevationBucketIndex] = useState(0);
+  const [sortBy, setSortBy] = useState<SortBy>("name");
+  const [sortDir, setSortDir] = useState<SortDir>("asc");
   const { isAuthenticated } = useAuth();
   const pageSize = 20;
+
+  function toggleSort(column: SortBy) {
+    if (sortBy === column) {
+      setSortDir((d) => (d === "asc" ? "desc" : "asc"));
+    } else {
+      setSortBy(column);
+      setSortDir("asc");
+    }
+    setPage(1);
+  }
+
+  function sortArrow(column: SortBy) {
+    if (sortBy !== column) {
+      return "";
+    }
+    return sortDir === "asc" ? " ▲" : " ▼";
+  }
 
   useEffect(() => {
     getCountries().then(setCountries);
@@ -63,6 +82,8 @@ export function SearchPage() {
         country: countryFilter || undefined,
         minElevation: bucket.min,
         maxElevation: bucket.max,
+        sortBy,
+        sortDir,
       })
         .then((res) => {
           setResults(res.items);
@@ -72,7 +93,7 @@ export function SearchPage() {
     }, 300);
 
     return () => clearTimeout(timeout);
-  }, [query, page, countryFilter, elevationBucketIndex, canSearch]);
+  }, [query, page, countryFilter, elevationBucketIndex, canSearch, sortBy, sortDir]);
 
   const totalPages = Math.max(1, Math.ceil(totalCount / pageSize));
 
@@ -120,7 +141,23 @@ export function SearchPage() {
       </div>
       {loading && <p>Searching...</p>}
       {!loading && canSearch && results.length === 0 && <p>No peaks found.</p>}
-      <div style={{ marginTop: "1rem" }}>
+      {results.length > 0 && (
+        <div style={{ display: "flex", gap: "1rem", marginTop: "1rem", fontSize: "0.9em", color: "#666" }}>
+          <button
+            onClick={() => toggleSort("name")}
+            style={{ background: "none", border: "none", padding: 0, cursor: "pointer", font: "inherit", color: "inherit" }}
+          >
+            Sort by name{sortArrow("name")}
+          </button>
+          <button
+            onClick={() => toggleSort("elevation")}
+            style={{ background: "none", border: "none", padding: 0, cursor: "pointer", font: "inherit", color: "inherit" }}
+          >
+            Sort by elevation{sortArrow("elevation")}
+          </button>
+        </div>
+      )}
+      <div style={{ marginTop: "0.5rem" }}>
         {results.map((peak) => (
           <PeakCard
             key={peak.id}
