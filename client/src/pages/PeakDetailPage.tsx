@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import { getPeak } from "../api/peaksApi";
+import { PeakMap } from "../components/PeakMap";
 import type { PeakDetail } from "../types";
 
 export function PeakDetailPage() {
@@ -35,8 +36,8 @@ export function PeakDetailPage() {
         </li>
         {peak.alternateNames && <li>Also known as: {peak.alternateNames}</li>}
       </ul>
-      <div style={{ marginTop: "1rem", padding: "2rem", border: "1px dashed #ccc", textAlign: "center", color: "#888" }}>
-        Map coming soon
+      <div style={{ marginTop: "1rem" }}>
+        <PeakMap name={peak.name} latitude={peak.latitude} longitude={peak.longitude} />
       </div>
     </div>
   );
