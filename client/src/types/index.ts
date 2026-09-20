@@ -49,6 +49,13 @@ export interface CountryOption {
   name: string;
 }
 
+export interface Profile {
+  email: string;
+  firstName: string | null;
+  lastName: string | null;
+  profilePictureUrl: string | null;
+}
+
 export interface AuthResponse {
   token: string;
   expiresAt: string;
