@@ -69,6 +69,14 @@ public class VisitedPeaksController(AppDbContext db) : ControllerBase
         };
 
         db.VisitedPeaks.Add(visitedPeak);
+
+        var bucketListEntry = await db.BucketListEntries
+            .FirstOrDefaultAsync(b => b.UserId == userId && b.PeakId == request.PeakId);
+        if (bucketListEntry is not null)
+        {
+            db.BucketListEntries.Remove(bucketListEntry);
+        }
+
         await db.SaveChangesAsync();
 
         var dto = new VisitedPeakDto(
