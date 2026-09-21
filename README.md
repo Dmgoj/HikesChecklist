@@ -48,7 +48,7 @@ Client runs at `http://localhost:5173`.
 ## Notes
 
 - The SQLite dev database lives at `server/HikesChecklist.Api/hikeschecklist.dev.db` (gitignored).
-- JWTs are valid for 7 days (see `Jwt:ExpiryMinutes` in `appsettings.json`) — there's no refresh-token flow yet, just re-login after expiry.
+- JWTs are valid for 1 day (see `Jwt:ExpiryMinutes` in `appsettings.json`) — there's no refresh-token flow yet, just re-login after expiry.
 - Map view (Leaflet) is planned but not yet implemented; peak detail pages currently show a placeholder.
 
 ## Troubleshooting
