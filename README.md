@@ -1,6 +1,8 @@
 # HikesChecklist
 
-Search mountains and peaks worldwide, log in, and keep a checklist of the ones you've visited.
+Search mountains and peaks worldwide, log in, and keep a checklist of the ones you've visited or want to
+visit. Filter and sort search results by country, elevation, and name; view any peak on a map; and set a
+profile name/picture.
 
 ## Stack
 
@@ -49,4 +51,4 @@ Client runs at `http://localhost:5173`.
 
 - The SQLite dev database lives at `server/HikesChecklist.Api/hikeschecklist.dev.db` (gitignored).
 - JWTs are valid for 1 day (see `Jwt:ExpiryMinutes` in `appsettings.json`) — there's no refresh-token flow yet, just re-login after expiry.
-- Map view (Leaflet) is planned but not yet implemented; peak detail pages currently show a placeholder.
+- Peak detail pages show a Leaflet/OpenStreetMap map centered on the peak's coordinates.
