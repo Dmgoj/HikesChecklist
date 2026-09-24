@@ -38,11 +38,11 @@ public static class GeoNamesLineParser
         }
 
         int? elevation = null;
-        if (int.TryParse(fields[15], NumberStyles.Integer, CultureInfo.InvariantCulture, out var ele) && ele != 0)
+        if (int.TryParse(fields[15], NumberStyles.Integer, CultureInfo.InvariantCulture, out var ele) && IsValidElevation(ele))
         {
             elevation = ele;
         }
-        else if (int.TryParse(fields[16], NumberStyles.Integer, CultureInfo.InvariantCulture, out var dem) && dem != 0)
+        else if (int.TryParse(fields[16], NumberStyles.Integer, CultureInfo.InvariantCulture, out var dem) && IsValidElevation(dem))
         {
             elevation = dem;
         }
@@ -63,4 +63,9 @@ public static class GeoNamesLineParser
             fields[17],
             modifiedAt);
     }
+
+    // GeoNames' elevation/dem columns use 0 for "not set" and DEM sentinels such as -9999 or
+    // -32768 for "no data at this pixel" - neither is a real elevation, and no terrestrial
+    // mountain feature is anywhere near -1000m, so treat anything that low as invalid too.
+    private static bool IsValidElevation(int value) => value != 0 && value > -1000;
 }
