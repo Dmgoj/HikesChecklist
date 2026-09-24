@@ -12,6 +12,13 @@ export interface SearchFilters {
   sortDir?: SortDir;
 }
 
+// Caches search results and peak details for this page visit only (cleared on reload). Avoids
+// re-hitting the API when the user pages back and forth or re-selects a filter combo they already
+// viewed - the underlying data (seeded once via ingestion) doesn't change during a session.
+const searchCache = new Map<string, PeakSearchResult>();
+const peakCache = new Map<number, PeakDetail>();
+let countriesCache: CountryOption[] | null = null;
+
 export function searchPeaks(
   query: string,
   page = 1,
@@ -34,13 +41,50 @@ export function searchPeaks(
   if (filters.sortDir) {
     params.set("sortDir", filters.sortDir);
   }
-  return apiFetch(`/api/peaks/search?${params.toString()}`);
+  params.sort();
+  const cacheKey = params.toString();
+
+  const cached = searchCache.get(cacheKey);
+  if (cached) {
+    return Promise.resolve(cached);
+  }
+
+  return apiFetch<PeakSearchResult>(`/api/peaks/search?${cacheKey}`).then((result) => {
+    searchCache.set(cacheKey, result);
+    return result;
+  });
 }
 
 export function getPeak(id: number): Promise<PeakDetail> {
-  return apiFetch(`/api/peaks/${id}`);
+  const cached = peakCache.get(id);
+  if (cached) {
+    return Promise.resolve(cached);
+  }
+
+  return apiFetch<PeakDetail>(`/api/peaks/${id}`).then((result) => {
+    peakCache.set(id, result);
+    return result;
+  });
 }
 
 export function getCountries(): Promise<CountryOption[]> {
-  return apiFetch("/api/peaks/countries");
+  if (countriesCache) {
+    return Promise.resolve(countriesCache);
+  }
+
+  return apiFetch<CountryOption[]>("/api/peaks/countries").then((result) => {
+    countriesCache = result;
+    return result;
+  });
+}
+
+// Visited/bucket-list toggles change a peak's status but not its search-result row shape, so the
+// cached search pages would still show it correctly on next render - but the detail page's own
+// visited/bucket-list flags are fetched separately (not part of PeakDetail), so no invalidation
+// is needed here. This exists for the rare case a peak's core data changes underneath a session
+// (re-ingestion while the app is open) - not expected in normal use, but cheap to provide.
+export function clearPeaksCache(): void {
+  searchCache.clear();
+  peakCache.clear();
+  countriesCache = null;
 }
