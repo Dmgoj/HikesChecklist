@@ -17,4 +17,5 @@ public class Peak
 
     public ICollection<VisitedPeak> VisitedByUsers { get; set; } = new List<VisitedPeak>();
     public ICollection<BucketListEntry> BucketListedByUsers { get; set; } = new List<BucketListEntry>();
+    public ElevationOverride? ElevationOverride { get; set; }
 }
