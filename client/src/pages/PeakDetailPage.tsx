@@ -78,6 +78,9 @@ export function PeakDetailPage() {
     );
   }
 
+  const elevationLooksUnderstated =
+    peak.featureCode === "MTS" && peak.elevationMeters !== null && peak.elevationMeters < 200;
+
   return (
     <div style={{ maxWidth: 1100, margin: "0 auto", padding: "40px 40px 64px" }}>
       <div
@@ -133,6 +136,12 @@ export function PeakDetailPage() {
               {peak.elevationMeters ? peak.elevationMeters.toLocaleString() : "—"}
               <span style={{ fontSize: 16, color: "var(--color-text-faint)", fontFamily: "var(--font-body)" }}> m</span>
             </div>
+            {elevationLooksUnderstated && (
+              <div style={{ fontSize: 11, color: "var(--color-text-faint)", marginTop: 8, lineHeight: 1.4 }}>
+                Approximate — GeoNames marks large ranges with a single point, which can sit on low
+                ground far below the range's true high point.
+              </div>
+            )}
           </StatCard>
 
           <StatCard label="Coordinates">
