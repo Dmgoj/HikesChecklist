@@ -32,7 +32,7 @@ public class PeaksController(AppDbContext db) : ControllerBase
         page = Math.Max(page, 1);
         pageSize = Math.Clamp(pageSize, 1, 100);
 
-        var query = db.Peaks.AsNoTracking().AsQueryable();
+        var query = db.Peaks.AsNoTracking().Include(p => p.ElevationOverride).AsQueryable();
 
         if (hasNameQuery)
         {
@@ -46,12 +46,16 @@ public class PeaksController(AppDbContext db) : ControllerBase
 
         if (minElevation.HasValue)
         {
-            query = query.Where(p => p.ElevationMeters != null && p.ElevationMeters >= minElevation.Value);
+            query = query.Where(p =>
+                (p.ElevationOverride != null ? p.ElevationOverride.ElevationMeters : p.ElevationMeters) != null &&
+                (p.ElevationOverride != null ? p.ElevationOverride.ElevationMeters : p.ElevationMeters) >= minElevation.Value);
         }
 
         if (maxElevation.HasValue)
         {
-            query = query.Where(p => p.ElevationMeters != null && p.ElevationMeters < maxElevation.Value);
+            query = query.Where(p =>
+                (p.ElevationOverride != null ? p.ElevationOverride.ElevationMeters : p.ElevationMeters) != null &&
+                (p.ElevationOverride != null ? p.ElevationOverride.ElevationMeters : p.ElevationMeters) < maxElevation.Value);
         }
 
         var totalCount = await query.CountAsync();
@@ -61,8 +65,10 @@ public class PeaksController(AppDbContext db) : ControllerBase
         query = sortBy.ToLowerInvariant() switch
         {
             "elevation" => descending
-                ? query.OrderByDescending(p => p.ElevationMeters.HasValue).ThenByDescending(p => p.ElevationMeters)
-                : query.OrderByDescending(p => p.ElevationMeters.HasValue).ThenBy(p => p.ElevationMeters),
+                ? query.OrderByDescending(p => (p.ElevationOverride != null ? p.ElevationOverride.ElevationMeters : p.ElevationMeters).HasValue)
+                    .ThenByDescending(p => p.ElevationOverride != null ? p.ElevationOverride.ElevationMeters : p.ElevationMeters)
+                : query.OrderByDescending(p => (p.ElevationOverride != null ? p.ElevationOverride.ElevationMeters : p.ElevationMeters).HasValue)
+                    .ThenBy(p => p.ElevationOverride != null ? p.ElevationOverride.ElevationMeters : p.ElevationMeters),
             _ => descending
                 ? query.OrderByDescending(p => p.Name)
                 : query.OrderBy(p => p.Name),
@@ -71,7 +77,11 @@ public class PeaksController(AppDbContext db) : ControllerBase
         var items = await query
             .Skip((page - 1) * pageSize)
             .Take(pageSize)
-            .Select(p => new PeakSummaryDto(p.Id, p.Name, p.CountryCode, p.ElevationMeters))
+            .Select(p => new PeakSummaryDto(
+                p.Id,
+                p.Name,
+                p.CountryCode,
+                p.ElevationOverride != null ? p.ElevationOverride.ElevationMeters : p.ElevationMeters))
             .ToListAsync();
 
         return Ok(new PeakSearchResultDto(items, page, pageSize, totalCount));
@@ -98,11 +108,17 @@ public class PeaksController(AppDbContext db) : ControllerBase
     [HttpGet("{id:int}")]
     public async Task<ActionResult<PeakDto>> GetById(int id)
     {
-        var peak = await db.Peaks.AsNoTracking().FirstOrDefaultAsync(p => p.Id == id);
+        var peak = await db.Peaks
+            .AsNoTracking()
+            .Include(p => p.ElevationOverride)
+            .FirstOrDefaultAsync(p => p.Id == id);
+
         if (peak is null)
         {
             return NotFound();
         }
+
+        var effectiveElevation = peak.ElevationOverride?.ElevationMeters ?? peak.ElevationMeters;
 
         return Ok(new PeakDto(
             peak.Id,
@@ -111,7 +127,9 @@ public class PeaksController(AppDbContext db) : ControllerBase
             peak.AlternateNames,
             peak.Latitude,
             peak.Longitude,
-            peak.ElevationMeters,
+            effectiveElevation,
+            peak.ElevationOverride is not null,
+            peak.ElevationOverride?.Source,
             peak.CountryCode,
             CountryNames.ByCode.GetValueOrDefault(peak.CountryCode, peak.CountryCode),
             peak.FeatureCode));

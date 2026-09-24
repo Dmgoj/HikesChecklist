@@ -8,6 +8,8 @@ public record PeakDto(
     double Latitude,
     double Longitude,
     int? ElevationMeters,
+    bool ElevationIsOverridden,
+    string? ElevationSource,
     string CountryCode,
     string CountryName,
     string FeatureCode);
