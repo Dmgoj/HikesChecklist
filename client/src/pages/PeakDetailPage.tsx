@@ -136,8 +136,14 @@ export function PeakDetailPage() {
           </StatCard>
 
           <StatCard label="Coordinates">
-            <div className="mono" style={{ fontSize: 15, fontWeight: 700 }}>{peak.latitude.toFixed(4)}°</div>
-            <div className="mono" style={{ fontSize: 15, fontWeight: 700 }}>{peak.longitude.toFixed(4)}°</div>
+            <div className="mono" style={{ fontSize: 15, fontWeight: 700 }}>
+              <span style={{ color: "var(--color-text-faint)", fontWeight: 600 }}>Lat </span>
+              {peak.latitude.toFixed(4)}°
+            </div>
+            <div className="mono" style={{ fontSize: 15, fontWeight: 700 }}>
+              <span style={{ color: "var(--color-text-faint)", fontWeight: 600 }}>Lon </span>
+              {peak.longitude.toFixed(4)}°
+            </div>
           </StatCard>
 
           <StatCard label="Country">
