@@ -27,6 +27,27 @@
   font-family: var(--font-body);
 }
 
+:root[data-theme="light"] {
+  color-scheme: light;
+
+  --color-bg: #f7f8f9;
+  --color-surface: #ffffff;
+  --color-surface-alt: #ffffff;
+  --color-border: #e3e6e9;
+  --color-border-strong: #d3d7db;
+  --color-text: #1c1e21;
+  --color-text-muted: #62686f;
+  --color-text-faint: #8a9099;
+  --color-text-dim: #b7bcc2;
+  --color-accent: #f4511e;
+  --color-accent-hover: #ff6a3d;
+  --color-accent-soft: rgba(244, 81, 30, 0.08);
+  --color-accent-soft-strong: rgba(244, 81, 30, 0.14);
+  --color-accent-contrast: #ffffff;
+  --color-accent-text: #c2410c;
+  --color-danger: #c23a2f;
+}
+
 * {
   box-sizing: border-box;
 }
