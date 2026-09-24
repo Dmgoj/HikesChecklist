@@ -59,65 +59,77 @@ export function ProfilePage() {
   }
 
   if (loading) {
-    return <p>Loading...</p>;
+    return <p style={{ padding: "56px 40px", color: "var(--color-text-muted)" }}>Loading...</p>;
   }
 
   return (
-    <div style={{ maxWidth: 400, margin: "2rem auto" }}>
-      <h1>My Profile</h1>
+    <div style={{ maxWidth: 460, margin: "0 auto", padding: "56px 24px 64px" }}>
+      <div className="mono" style={{ fontSize: 12, letterSpacing: 3, textTransform: "uppercase", color: "var(--color-accent)", marginBottom: 14 }}>
+        Your account
+      </div>
+      <h1 style={{ margin: "0 0 32px", fontFamily: "var(--font-display)", fontSize: 40, letterSpacing: 0.3, textTransform: "uppercase" }}>
+        My Profile
+      </h1>
 
-      <div style={{ display: "flex", alignItems: "center", gap: "1rem", marginBottom: "1.5rem" }}>
+      <div style={{ display: "flex", alignItems: "center", gap: 20, marginBottom: 32 }}>
         {pictureUrl ? (
           <img
             src={toAbsolutePictureUrl(pictureUrl) ?? undefined}
             alt="Profile"
-            style={{ width: 80, height: 80, borderRadius: "50%", objectFit: "cover" }}
+            style={{ width: 84, height: 84, borderRadius: "50%", objectFit: "cover", border: "1px solid var(--color-border)" }}
           />
         ) : (
           <div
             style={{
-              width: 80,
-              height: 80,
+              width: 84,
+              height: 84,
               borderRadius: "50%",
-              background: "#eee",
+              background: "var(--color-surface)",
+              border: "1px solid var(--color-border)",
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
-              color: "#888",
-              fontSize: "0.8em",
+              color: "var(--color-text-faint)",
+              fontSize: 12,
             }}
           >
             No photo
           </div>
         )}
         <div>
-          <input type="file" accept="image/png,image/jpeg,image/gif,image/webp" onChange={handlePictureChange} disabled={uploading} />
-          {uploading && <p>Uploading...</p>}
+          <input
+            type="file"
+            accept="image/png,image/jpeg,image/gif,image/webp"
+            onChange={handlePictureChange}
+            disabled={uploading}
+            style={{ color: "var(--color-text-muted)", fontSize: 13 }}
+          />
+          {uploading && <p style={{ color: "var(--color-text-faint)", fontSize: 13 }}>Uploading...</p>}
         </div>
       </div>
 
-      <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: "0.5rem" }}>
-        <label>
+      <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+        <label style={{ display: "flex", flexDirection: "column", gap: 6, fontSize: 12, letterSpacing: 1, textTransform: "uppercase", color: "var(--color-text-faint)" }} className="mono">
           First name
           <input
+            className="input"
             type="text"
             value={firstName}
             onChange={(e) => setFirstName(e.target.value)}
-            style={{ display: "block", width: "100%", padding: "0.5rem" }}
           />
         </label>
-        <label>
+        <label style={{ display: "flex", flexDirection: "column", gap: 6, fontSize: 12, letterSpacing: 1, textTransform: "uppercase", color: "var(--color-text-faint)" }} className="mono">
           Last name
           <input
+            className="input"
             type="text"
             value={lastName}
             onChange={(e) => setLastName(e.target.value)}
-            style={{ display: "block", width: "100%", padding: "0.5rem" }}
           />
         </label>
-        {error && <p style={{ color: "red" }}>{error}</p>}
-        {saved && <p style={{ color: "green" }}>Saved.</p>}
-        <button type="submit" disabled={saving}>
+        {error && <p style={{ color: "var(--color-danger)", margin: 0, fontSize: 14 }}>{error}</p>}
+        {saved && <p style={{ color: "var(--color-accent-text)", margin: 0, fontSize: 14 }}>Saved.</p>}
+        <button type="submit" disabled={saving} className="btn btn-primary" style={{ padding: "14px 0", fontSize: 14 }}>
           {saving ? "Saving..." : "Save"}
         </button>
       </form>

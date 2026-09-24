@@ -24,23 +24,39 @@ export function BucketListPage() {
   }
 
   if (loading) {
-    return <p>Loading...</p>;
+    return <p style={{ padding: "56px 40px", color: "var(--color-text-muted)" }}>Loading...</p>;
   }
 
   return (
-    <div style={{ maxWidth: 640, margin: "2rem auto" }}>
-      <h1>Bucket List</h1>
-      {bucketList.length === 0 && <p>You haven't added any peaks to your bucket list yet.</p>}
+    <div style={{ maxWidth: 1100, margin: "0 auto", padding: "56px 40px 64px" }}>
+      <div className="mono" style={{ fontSize: 12, letterSpacing: 3, textTransform: "uppercase", color: "var(--color-accent)", marginBottom: 14 }}>
+        Wishlist
+      </div>
+      <h1 style={{ margin: "0 0 32px", fontFamily: "var(--font-display)", fontSize: 44, letterSpacing: 0.3, textTransform: "uppercase" }}>
+        Bucket List
+      </h1>
+
+      {bucketList.length === 0 && (
+        <p style={{ color: "var(--color-text-muted)" }}>You haven't added any peaks to your bucket list yet.</p>
+      )}
+
       {bucketList.map((b) => (
-        <div key={b.peakId} style={{ display: "flex", justifyContent: "space-between", padding: "0.5rem 0", borderBottom: "1px solid #eee" }}>
+        <div
+          key={b.peakId}
+          style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 20, padding: "18px 12px", borderTop: "1px solid var(--color-border)" }}
+        >
           <div>
-            <Link to={`/peaks/${b.peakId}`}>{b.peakName}</Link>
-            <div style={{ color: "#666", fontSize: "0.9em" }}>
+            <Link to={`/peaks/${b.peakId}`} className="link" style={{ fontWeight: 700, fontSize: 17 }}>
+              {b.peakName}
+            </Link>
+            <div style={{ fontSize: 13, color: "var(--color-text-muted)", marginTop: 4 }}>
               {b.countryCode}
               {b.elevationMeters ? ` · ${b.elevationMeters}m` : ""}
             </div>
           </div>
-          <button onClick={() => handleRemove(b.peakId)}>Remove</button>
+          <button onClick={() => handleRemove(b.peakId)} className="btn btn-ghost">
+            Remove
+          </button>
         </div>
       ))}
     </div>

@@ -35,8 +35,8 @@ export function VisitedToggleButton({ peakId, initialVisited, onChange }: Props)
   }
 
   return (
-    <button onClick={handleClick} disabled={busy}>
-      {visited ? "Visited ✓" : "Mark as visited"}
+    <button onClick={handleClick} disabled={busy} className={`btn ${visited ? "btn-active" : "btn-primary"}`}>
+      {visited ? "Visited ✓" : "Mark visited"}
     </button>
   );
 }

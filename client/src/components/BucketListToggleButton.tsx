@@ -35,8 +35,8 @@ export function BucketListToggleButton({ peakId, initialOnList, onChange }: Prop
   }
 
   return (
-    <button onClick={handleClick} disabled={busy}>
-      {onList ? "On bucket list ✓" : "Add to bucket list"}
+    <button onClick={handleClick} disabled={busy} className={`btn ${onList ? "btn-active" : "btn-ghost"}`}>
+      {onList ? "On list ✓" : "+ Bucket list"}
     </button>
   );
 }

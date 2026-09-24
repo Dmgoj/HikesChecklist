@@ -98,25 +98,72 @@ export function SearchPage() {
   const totalPages = Math.max(1, Math.ceil(totalCount / pageSize));
 
   return (
-    <div style={{ maxWidth: 640, margin: "2rem auto" }}>
-      <h1>Search Peaks</h1>
-      <input
-        type="text"
-        placeholder="Search by name (e.g. Everest), or leave blank and use the filters below"
-        value={query}
-        onChange={(e) => {
-          setQuery(e.target.value);
-          setPage(1);
+    <div style={{ maxWidth: 1100, margin: "0 auto", padding: "56px 40px 64px" }}>
+      <div style={{ fontFamily: "var(--font-mono)", fontSize: 12, letterSpacing: 3, textTransform: "uppercase", color: "var(--color-accent)", marginBottom: 14 }}>
+        Search the catalogue
+      </div>
+      <h1
+        style={{
+          margin: "0 0 32px",
+          fontFamily: "var(--font-display)",
+          fontSize: 48,
+          lineHeight: 1,
+          letterSpacing: 0.5,
+          textTransform: "uppercase",
         }}
-        style={{ width: "100%", padding: "0.5rem" }}
-      />
-      <div style={{ display: "flex", gap: "0.5rem", marginTop: "0.5rem" }}>
+      >
+        Find your next summit
+      </h1>
+
+      <div
+        style={{
+          display: "flex",
+          alignItems: "center",
+          gap: 16,
+          background: "var(--color-surface-alt)",
+          border: "2px solid var(--color-accent)",
+          borderRadius: 10,
+          padding: "4px 6px 4px 20px",
+        }}
+      >
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--color-accent)" strokeWidth="2.4">
+          <circle cx="11" cy="11" r="7" />
+          <path d="M21 21l-4.3-4.3" />
+        </svg>
+        <input
+          type="text"
+          placeholder="Search by name (e.g. Everest), or leave blank and use the filters below"
+          value={query}
+          onChange={(e) => {
+            setQuery(e.target.value);
+            setPage(1);
+          }}
+          style={{
+            flexGrow: 1,
+            background: "transparent",
+            border: "none",
+            outline: "none",
+            fontFamily: "var(--font-body)",
+            fontSize: 16,
+            fontWeight: 600,
+            color: "var(--color-text)",
+            padding: "14px 0",
+          }}
+        />
+      </div>
+
+      <div style={{ display: "flex", alignItems: "center", gap: 14, marginTop: 18 }}>
+        <span style={{ fontFamily: "var(--font-mono)", fontSize: 11, letterSpacing: 2, textTransform: "uppercase", color: "var(--color-text-faint)" }}>
+          Filter
+        </span>
         <select
+          className="select"
           value={countryFilter}
           onChange={(e) => {
             setCountryFilter(e.target.value);
             setPage(1);
           }}
+          style={{ borderRadius: 999 }}
         >
           <option value="">All countries</option>
           {countries.map((c) => (
@@ -126,10 +173,17 @@ export function SearchPage() {
           ))}
         </select>
         <select
+          className="select"
           value={elevationBucketIndex}
           onChange={(e) => {
             setElevationBucketIndex(Number(e.target.value));
             setPage(1);
+          }}
+          style={{
+            borderRadius: 999,
+            borderColor: elevationBucketIndex !== 0 ? "var(--color-accent)" : undefined,
+            color: elevationBucketIndex !== 0 ? "var(--color-accent-text)" : undefined,
+            background: elevationBucketIndex !== 0 ? "var(--color-accent-soft)" : undefined,
           }}
         >
           {ELEVATION_BUCKETS.map((bucket, index) => (
@@ -139,44 +193,67 @@ export function SearchPage() {
           ))}
         </select>
       </div>
-      {loading && <p>Searching...</p>}
-      {!loading && canSearch && results.length === 0 && <p>No peaks found.</p>}
+
+      {loading && <p style={{ color: "var(--color-text-muted)" }}>Searching...</p>}
+      {!loading && canSearch && results.length === 0 && <p style={{ color: "var(--color-text-muted)" }}>No peaks found.</p>}
+
       {results.length > 0 && (
-        <div style={{ display: "flex", gap: "1rem", marginTop: "1rem", fontSize: "0.9em", color: "#666" }}>
+        <div style={{ display: "flex", gap: 24, marginTop: 32, fontSize: 13 }}>
           <button
             onClick={() => toggleSort("name")}
-            style={{ background: "none", border: "none", padding: 0, cursor: "pointer", font: "inherit", color: "inherit" }}
+            className="link"
+            style={{
+              background: "none",
+              border: "none",
+              padding: 0,
+              cursor: "pointer",
+              fontFamily: "inherit",
+              fontWeight: 700,
+              color: sortBy === "name" ? "var(--color-accent)" : "var(--color-text-faint)",
+            }}
           >
             Sort by name{sortArrow("name")}
           </button>
           <button
             onClick={() => toggleSort("elevation")}
-            style={{ background: "none", border: "none", padding: 0, cursor: "pointer", font: "inherit", color: "inherit" }}
+            className="link"
+            style={{
+              background: "none",
+              border: "none",
+              padding: 0,
+              cursor: "pointer",
+              fontFamily: "inherit",
+              fontWeight: 700,
+              color: sortBy === "elevation" ? "var(--color-accent)" : "var(--color-text-faint)",
+            }}
           >
             Sort by elevation{sortArrow("elevation")}
           </button>
         </div>
       )}
-      <div style={{ marginTop: "0.5rem" }}>
-        {results.map((peak) => (
+
+      <div style={{ marginTop: 8 }}>
+        {results.map((peak, index) => (
           <PeakCard
             key={peak.id}
+            index={index}
             peak={peak}
             visited={visitedIds.has(peak.id)}
             onBucketList={bucketListIds.has(peak.id)}
           />
         ))}
       </div>
+
       {totalCount > pageSize && (
-        <div style={{ display: "flex", gap: "1rem", marginTop: "1rem" }}>
-          <button disabled={page <= 1} onClick={() => setPage((p) => p - 1)}>
-            Previous
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 18, marginTop: 40 }}>
+          <button disabled={page <= 1} onClick={() => setPage((p) => p - 1)} className="btn btn-ghost mono">
+            ← Prev
           </button>
-          <span>
+          <span className="mono" style={{ fontSize: 13, color: "var(--color-text-muted)" }}>
             Page {page} of {totalPages}
           </span>
-          <button disabled={page >= totalPages} onClick={() => setPage((p) => p + 1)}>
-            Next
+          <button disabled={page >= totalPages} onClick={() => setPage((p) => p + 1)} className="btn btn-ghost mono">
+            Next →
           </button>
         </div>
       )}

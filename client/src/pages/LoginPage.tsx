@@ -28,10 +28,13 @@ export function LoginPage() {
   }
 
   return (
-    <div style={{ maxWidth: 320, margin: "2rem auto" }}>
-      <h1>Log in</h1>
-      <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: "0.5rem" }}>
+    <div style={{ maxWidth: 380, margin: "80px auto", padding: "0 24px" }}>
+      <h1 style={{ fontFamily: "var(--font-display)", fontSize: 32, textTransform: "uppercase", letterSpacing: 0.3, marginBottom: 28 }}>
+        Log in
+      </h1>
+      <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: 14 }}>
         <input
+          className="input"
           type="email"
           placeholder="Email"
           value={email}
@@ -39,14 +42,15 @@ export function LoginPage() {
           required
         />
         <input
+          className="input"
           type="password"
           placeholder="Password"
           value={password}
           onChange={(e) => setPassword(e.target.value)}
           required
         />
-        {error && <p style={{ color: "red" }}>{error}</p>}
-        <button type="submit" disabled={submitting}>
+        {error && <p style={{ color: "var(--color-danger)", margin: 0, fontSize: 14 }}>{error}</p>}
+        <button type="submit" disabled={submitting} className="btn btn-primary" style={{ padding: "14px 0", fontSize: 14 }}>
           {submitting ? "Logging in..." : "Log in"}
         </button>
       </form>
