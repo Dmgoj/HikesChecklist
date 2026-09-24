@@ -94,7 +94,7 @@ export function PeakDetailPage() {
       <div style={{ display: "flex", alignItems: "flex-end", justifyContent: "space-between", paddingBottom: 28, borderBottom: "1px solid var(--color-border)" }}>
         <div>
           <div className="mono" style={{ fontSize: 12, letterSpacing: 2, textTransform: "uppercase", color: "var(--color-accent)", marginBottom: 10 }}>
-            {peak.countryCode}
+            {peak.countryName}
           </div>
           <h1 style={{ margin: 0, fontFamily: "var(--font-display)", fontSize: 48, letterSpacing: 0.3, textTransform: "uppercase" }}>
             {peak.name}
@@ -141,7 +141,7 @@ export function PeakDetailPage() {
           </StatCard>
 
           <StatCard label="Country">
-            <div style={{ fontSize: 15, fontWeight: 700 }}>{peak.countryCode}</div>
+            <div style={{ fontSize: 15, fontWeight: 700 }}>{peak.countryName}</div>
           </StatCard>
 
           {visited && (

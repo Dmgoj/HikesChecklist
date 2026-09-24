@@ -113,6 +113,7 @@ public class PeaksController(AppDbContext db) : ControllerBase
             peak.Longitude,
             peak.ElevationMeters,
             peak.CountryCode,
+            CountryNames.ByCode.GetValueOrDefault(peak.CountryCode, peak.CountryCode),
             peak.FeatureCode));
     }
 }

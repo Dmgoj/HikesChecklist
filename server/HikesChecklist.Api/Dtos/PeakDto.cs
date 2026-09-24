@@ -9,4 +9,5 @@ public record PeakDto(
     double Longitude,
     int? ElevationMeters,
     string CountryCode,
+    string CountryName,
     string FeatureCode);

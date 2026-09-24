@@ -14,6 +14,7 @@ export interface PeakDetail {
   longitude: number;
   elevationMeters: number | null;
   countryCode: string;
+  countryName: string;
   featureCode: string;
 }
 
