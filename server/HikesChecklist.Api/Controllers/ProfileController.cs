@@ -19,6 +19,22 @@ public class ProfileController(UserManager<ApplicationUser> userManager, IWebHos
 
     private const long MaxFileSizeBytes = 5 * 1024 * 1024;
 
+    // Magic-byte checks so a renamed non-image file can't pass extension-only validation.
+    private static bool MatchesDeclaredImageType(ReadOnlySpan<byte> header, string extension)
+    {
+        return extension switch
+        {
+            ".jpg" or ".jpeg" => header.Length >= 3 && header[0] == 0xFF && header[1] == 0xD8 && header[2] == 0xFF,
+            ".png" => header.Length >= 8
+                && header[..8].SequenceEqual(new byte[] { 0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A }),
+            ".gif" => header.Length >= 4 && header[..4].SequenceEqual("GIF8"u8),
+            ".webp" => header.Length >= 12
+                && header[..4].SequenceEqual("RIFF"u8)
+                && header.Slice(8, 4).SequenceEqual("WEBP"u8),
+            _ => false
+        };
+    }
+
     private string CurrentUserId =>
         User.FindFirstValue(ClaimTypes.NameIdentifier)
         ?? throw new InvalidOperationException("User id claim is missing.");
@@ -80,6 +96,18 @@ public class ProfileController(UserManager<ApplicationUser> userManager, IWebHos
         if (!AllowedExtensions.Contains(extension))
         {
             return BadRequest("Unsupported file type. Allowed: jpg, jpeg, png, gif, webp.");
+        }
+
+        var header = new byte[12];
+        int bytesRead;
+        await using (var headerStream = file.OpenReadStream())
+        {
+            bytesRead = await headerStream.ReadAsync(header.AsMemory(0, header.Length));
+        }
+
+        if (!MatchesDeclaredImageType(header.AsSpan(0, bytesRead), extension.ToLowerInvariant()))
+        {
+            return BadRequest("File content does not match its declared image type.");
         }
 
         var user = await userManager.FindByIdAsync(CurrentUserId);
