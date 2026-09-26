@@ -3,11 +3,13 @@ using HikesChecklist.Api.Models;
 using HikesChecklist.Api.Services;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 
 namespace HikesChecklist.Api.Controllers;
 
 [ApiController]
 [Route("api/auth")]
+[EnableRateLimiting("AuthRateLimitPolicy")]
 public class AuthController(
     UserManager<ApplicationUser> userManager,
     JwtTokenService jwtTokenService) : ControllerBase
@@ -34,10 +36,23 @@ public class AuthController(
     public async Task<ActionResult<AuthResponse>> Login(LoginRequest request)
     {
         var user = await userManager.FindByEmailAsync(request.Email);
-        if (user is null || !await userManager.CheckPasswordAsync(user, request.Password))
+        if (user is null)
         {
             return Unauthorized();
         }
+
+        if (await userManager.IsLockedOutAsync(user))
+        {
+            return Unauthorized();
+        }
+
+        if (!await userManager.CheckPasswordAsync(user, request.Password))
+        {
+            await userManager.AccessFailedAsync(user);
+            return Unauthorized();
+        }
+
+        await userManager.ResetAccessFailedCountAsync(user);
 
         var (token, expiresAt) = jwtTokenService.CreateToken(user);
         return Ok(new AuthResponse(token, expiresAt, user.Email!));
