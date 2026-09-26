@@ -1,0 +1,164 @@
+using HikesChecklist.Api.Controllers;
+using HikesChecklist.Api.Dtos;
+using HikesChecklist.Api.Models;
+using Microsoft.AspNetCore.Hosting;
+using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Mvc;
+using Moq;
+
+namespace HikesChecklist.Api.Tests.Controllers;
+
+public class ProfileControllerTests : IDisposable
+{
+    private readonly string _tempRoot;
+
+    public ProfileControllerTests()
+    {
+        _tempRoot = Path.Combine(Path.GetTempPath(), "HikesChecklistTests_" + Guid.NewGuid());
+        Directory.CreateDirectory(_tempRoot);
+    }
+
+    public void Dispose()
+    {
+        if (Directory.Exists(_tempRoot))
+        {
+            Directory.Delete(_tempRoot, recursive: true);
+        }
+    }
+
+    private static Mock<UserManager<ApplicationUser>> CreateUserManagerMock()
+    {
+        var store = Mock.Of<IUserStore<ApplicationUser>>();
+        return new Mock<UserManager<ApplicationUser>>(store, null!, null!, null!, null!, null!, null!, null!, null!);
+    }
+
+    private ProfileController CreateController(Mock<UserManager<ApplicationUser>> userManager, string currentUserId = "user-1")
+    {
+        var env = Mock.Of<IWebHostEnvironment>(e => e.ContentRootPath == _tempRoot);
+        var controller = new ProfileController(userManager.Object, env);
+        controller.SetUser(currentUserId);
+        return controller;
+    }
+
+    private static IFormFile CreateFormFile(byte[] content, string fileName)
+    {
+        var stream = new MemoryStream(content);
+        return new FormFile(stream, 0, stream.Length, "file", fileName);
+    }
+
+    private static readonly byte[] ValidPngHeader =
+        [0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A, 0x00, 0x00, 0x00, 0x00];
+
+    [Fact]
+    public async Task GetProfile_UnknownUser_ReturnsNotFound()
+    {
+        var userManager = CreateUserManagerMock();
+        userManager.Setup(m => m.FindByIdAsync("user-1")).ReturnsAsync((ApplicationUser?)null);
+        var controller = CreateController(userManager);
+
+        var result = await controller.GetProfile();
+
+        Assert.IsType<NotFoundResult>(result.Result);
+    }
+
+    [Fact]
+    public async Task UpdateProfile_BlankNames_AreStoredAsNull()
+    {
+        var user = new ApplicationUser { Id = "user-1", Email = "u@example.com", FirstName = "Old", LastName = "Name" };
+        var userManager = CreateUserManagerMock();
+        userManager.Setup(m => m.FindByIdAsync("user-1")).ReturnsAsync(user);
+        userManager.Setup(m => m.UpdateAsync(user)).ReturnsAsync(IdentityResult.Success);
+        var controller = CreateController(userManager);
+
+        var result = await controller.UpdateProfile(new UpdateProfileRequest("  ", "  "));
+
+        var ok = Assert.IsType<OkObjectResult>(result.Result);
+        var dto = Assert.IsType<ProfileDto>(ok.Value);
+        Assert.Null(dto.FirstName);
+        Assert.Null(dto.LastName);
+    }
+
+    [Fact]
+    public async Task UpdateProfile_TrimsNameWhitespace()
+    {
+        var user = new ApplicationUser { Id = "user-1", Email = "u@example.com" };
+        var userManager = CreateUserManagerMock();
+        userManager.Setup(m => m.FindByIdAsync("user-1")).ReturnsAsync(user);
+        userManager.Setup(m => m.UpdateAsync(user)).ReturnsAsync(IdentityResult.Success);
+        var controller = CreateController(userManager);
+
+        var result = await controller.UpdateProfile(new UpdateProfileRequest("  Alice  ", "  Smith  "));
+
+        var ok = Assert.IsType<OkObjectResult>(result.Result);
+        var dto = Assert.IsType<ProfileDto>(ok.Value);
+        Assert.Equal("Alice", dto.FirstName);
+        Assert.Equal("Smith", dto.LastName);
+    }
+
+    [Fact]
+    public async Task UploadPicture_WrongExtension_ReturnsBadRequest()
+    {
+        var userManager = CreateUserManagerMock();
+        var controller = CreateController(userManager);
+        var file = CreateFormFile(ValidPngHeader, "malware.exe");
+
+        var result = await controller.UploadPicture(file);
+
+        var badRequest = Assert.IsType<BadRequestObjectResult>(result.Result);
+        Assert.Contains("Unsupported file type", badRequest.Value!.ToString());
+    }
+
+    [Fact]
+    public async Task UploadPicture_ContentDoesNotMatchExtension_ReturnsBadRequest()
+    {
+        var userManager = CreateUserManagerMock();
+        var controller = CreateController(userManager);
+        var textDisguisedAsPng = CreateFormFile("this is just plain text, not an image"u8.ToArray(), "fake.png");
+
+        var result = await controller.UploadPicture(textDisguisedAsPng);
+
+        var badRequest = Assert.IsType<BadRequestObjectResult>(result.Result);
+        Assert.Contains("does not match", badRequest.Value!.ToString());
+    }
+
+    [Fact]
+    public async Task UploadPicture_ValidPng_SavesFileAndReturnsUpdatedProfile()
+    {
+        var user = new ApplicationUser { Id = "user-1", Email = "u@example.com" };
+        var userManager = CreateUserManagerMock();
+        userManager.Setup(m => m.FindByIdAsync("user-1")).ReturnsAsync(user);
+        userManager.Setup(m => m.UpdateAsync(user)).ReturnsAsync(IdentityResult.Success);
+        var controller = CreateController(userManager);
+        var file = CreateFormFile(ValidPngHeader, "avatar.png");
+
+        var result = await controller.UploadPicture(file);
+
+        var ok = Assert.IsType<OkObjectResult>(result.Result);
+        var dto = Assert.IsType<ProfileDto>(ok.Value);
+        Assert.Equal("/api/profile/user-1/avatar", dto.ProfilePictureUrl);
+        Assert.True(File.Exists(Path.Combine(_tempRoot, "App_Data", "avatars", "user-1.png")));
+    }
+
+    [Fact]
+    public async Task UploadPicture_ReplacingExistingPicture_DeletesPreviousFile()
+    {
+        var user = new ApplicationUser { Id = "user-1", Email = "u@example.com", ProfilePicturePath = "user-1.jpg" };
+        var userManager = CreateUserManagerMock();
+        userManager.Setup(m => m.FindByIdAsync("user-1")).ReturnsAsync(user);
+        userManager.Setup(m => m.UpdateAsync(user)).ReturnsAsync(IdentityResult.Success);
+        var controller = CreateController(userManager);
+
+        var avatarsDir = Path.Combine(_tempRoot, "App_Data", "avatars");
+        Directory.CreateDirectory(avatarsDir);
+        var oldFilePath = Path.Combine(avatarsDir, "user-1.jpg");
+        await File.WriteAllBytesAsync(oldFilePath, [0xFF, 0xD8, 0xFF]);
+
+        var newFile = CreateFormFile(ValidPngHeader, "avatar.png");
+
+        await controller.UploadPicture(newFile);
+
+        Assert.False(File.Exists(oldFilePath));
+        Assert.True(File.Exists(Path.Combine(avatarsDir, "user-1.png")));
+    }
+}
