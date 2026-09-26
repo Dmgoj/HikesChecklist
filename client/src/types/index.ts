@@ -13,6 +13,8 @@ export interface PeakDetail {
   latitude: number;
   longitude: number;
   elevationMeters: number | null;
+  elevationIsOverridden: boolean;
+  elevationSource: string | null;
   countryCode: string;
   countryName: string;
   featureCode: string;

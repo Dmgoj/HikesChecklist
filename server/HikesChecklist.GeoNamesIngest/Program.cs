@@ -10,6 +10,17 @@ const int BatchSize = 2000;
 var dataDir = GetArgValue(args, "--data-dir") ?? "./data";
 var force = args.Contains("--force");
 var dbPath = GetArgValue(args, "--db") ?? "../HikesChecklist.Api/hikeschecklist.dev.db";
+var mode = GetArgValue(args, "--mode") ?? "geonames";
+
+if (mode == "wikidata-elevations")
+{
+    var wikidataOptionsBuilder = new DbContextOptionsBuilder<AppDbContext>();
+    wikidataOptionsBuilder.UseSqlite($"Data Source={dbPath}");
+    await using var wikidataDb = new AppDbContext(wikidataOptionsBuilder.Options);
+    await wikidataDb.Database.MigrateAsync();
+    await WikidataElevationImporter.RunAsync(wikidataDb);
+    return;
+}
 
 Directory.CreateDirectory(dataDir);
 var zipPath = Path.Combine(dataDir, "allCountries.zip");

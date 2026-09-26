@@ -25,14 +25,14 @@ public class BucketListController(AppDbContext db) : ControllerBase
         var entries = await db.BucketListEntries
             .AsNoTracking()
             .Where(b => b.UserId == userId)
-            .Include(b => b.Peak)
+            .Include(b => b.Peak).ThenInclude(p => p.ElevationOverride)
             .OrderByDescending(b => b.CreatedAt)
             .Select(b => new BucketListEntryDto(
                 b.PeakId,
                 b.Peak.Name,
                 b.Peak.Latitude,
                 b.Peak.Longitude,
-                b.Peak.ElevationMeters,
+                b.Peak.ElevationOverride != null ? b.Peak.ElevationOverride.ElevationMeters : b.Peak.ElevationMeters,
                 b.Peak.CountryCode))
             .ToListAsync();
 
@@ -44,7 +44,10 @@ public class BucketListController(AppDbContext db) : ControllerBase
     {
         var userId = CurrentUserId;
 
-        var peak = await db.Peaks.AsNoTracking().FirstOrDefaultAsync(p => p.Id == request.PeakId);
+        var peak = await db.Peaks
+            .AsNoTracking()
+            .Include(p => p.ElevationOverride)
+            .FirstOrDefaultAsync(p => p.Id == request.PeakId);
         if (peak is null)
         {
             return NotFound("Peak not found.");
@@ -68,7 +71,8 @@ public class BucketListController(AppDbContext db) : ControllerBase
         await db.SaveChangesAsync();
 
         var dto = new BucketListEntryDto(
-            peak.Id, peak.Name, peak.Latitude, peak.Longitude, peak.ElevationMeters, peak.CountryCode);
+            peak.Id, peak.Name, peak.Latitude, peak.Longitude,
+            peak.ElevationOverride?.ElevationMeters ?? peak.ElevationMeters, peak.CountryCode);
 
         return CreatedAtAction(nameof(GetAll), dto);
     }

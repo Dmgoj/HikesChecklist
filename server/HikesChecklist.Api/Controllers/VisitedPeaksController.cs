@@ -25,14 +25,14 @@ public class VisitedPeaksController(AppDbContext db) : ControllerBase
         var visited = await db.VisitedPeaks
             .AsNoTracking()
             .Where(v => v.UserId == userId)
-            .Include(v => v.Peak)
+            .Include(v => v.Peak).ThenInclude(p => p.ElevationOverride)
             .OrderByDescending(v => v.VisitedOn)
             .Select(v => new VisitedPeakDto(
                 v.PeakId,
                 v.Peak.Name,
                 v.Peak.Latitude,
                 v.Peak.Longitude,
-                v.Peak.ElevationMeters,
+                v.Peak.ElevationOverride != null ? v.Peak.ElevationOverride.ElevationMeters : v.Peak.ElevationMeters,
                 v.Peak.CountryCode,
                 v.VisitedOn,
                 v.Notes))
@@ -46,7 +46,10 @@ public class VisitedPeaksController(AppDbContext db) : ControllerBase
     {
         var userId = CurrentUserId;
 
-        var peak = await db.Peaks.AsNoTracking().FirstOrDefaultAsync(p => p.Id == request.PeakId);
+        var peak = await db.Peaks
+            .AsNoTracking()
+            .Include(p => p.ElevationOverride)
+            .FirstOrDefaultAsync(p => p.Id == request.PeakId);
         if (peak is null)
         {
             return NotFound("Peak not found.");
@@ -80,7 +83,8 @@ public class VisitedPeaksController(AppDbContext db) : ControllerBase
         await db.SaveChangesAsync();
 
         var dto = new VisitedPeakDto(
-            peak.Id, peak.Name, peak.Latitude, peak.Longitude, peak.ElevationMeters,
+            peak.Id, peak.Name, peak.Latitude, peak.Longitude,
+            peak.ElevationOverride?.ElevationMeters ?? peak.ElevationMeters,
             peak.CountryCode, visitedPeak.VisitedOn, visitedPeak.Notes);
 
         return CreatedAtAction(nameof(GetAll), dto);
@@ -92,7 +96,7 @@ public class VisitedPeaksController(AppDbContext db) : ControllerBase
         var userId = CurrentUserId;
 
         var visitedPeak = await db.VisitedPeaks
-            .Include(v => v.Peak)
+            .Include(v => v.Peak).ThenInclude(p => p.ElevationOverride)
             .FirstOrDefaultAsync(v => v.UserId == userId && v.PeakId == peakId);
 
         if (visitedPeak is null)
@@ -106,7 +110,8 @@ public class VisitedPeaksController(AppDbContext db) : ControllerBase
 
         var dto = new VisitedPeakDto(
             visitedPeak.Peak.Id, visitedPeak.Peak.Name, visitedPeak.Peak.Latitude, visitedPeak.Peak.Longitude,
-            visitedPeak.Peak.ElevationMeters, visitedPeak.Peak.CountryCode, visitedPeak.VisitedOn, visitedPeak.Notes);
+            visitedPeak.Peak.ElevationOverride?.ElevationMeters ?? visitedPeak.Peak.ElevationMeters,
+            visitedPeak.Peak.CountryCode, visitedPeak.VisitedOn, visitedPeak.Notes);
 
         return Ok(dto);
     }

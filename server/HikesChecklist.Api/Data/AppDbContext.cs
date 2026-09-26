@@ -9,6 +9,7 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : IdentityDbCo
     public DbSet<Peak> Peaks => Set<Peak>();
     public DbSet<VisitedPeak> VisitedPeaks => Set<VisitedPeak>();
     public DbSet<BucketListEntry> BucketListEntries => Set<BucketListEntry>();
+    public DbSet<ElevationOverride> ElevationOverrides => Set<ElevationOverride>();
 
     protected override void OnModelCreating(ModelBuilder builder)
     {
@@ -48,5 +49,14 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : IdentityDbCo
             .HasOne(b => b.User)
             .WithMany()
             .HasForeignKey(b => b.UserId);
+
+        builder.Entity<ElevationOverride>()
+            .HasIndex(e => e.PeakId)
+            .IsUnique();
+
+        builder.Entity<ElevationOverride>()
+            .HasOne(e => e.Peak)
+            .WithOne(p => p.ElevationOverride)
+            .HasForeignKey<ElevationOverride>(e => e.PeakId);
     }
 }
