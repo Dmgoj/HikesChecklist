@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { getBucketList, removeFromBucketList } from "../api/bucketListApi";
+import { VisitedToggleButton } from "../components/VisitedToggleButton";
 import type { BucketListEntry } from "../types";
 
 export function BucketListPage() {
@@ -21,6 +22,12 @@ export function BucketListPage() {
   async function handleRemove(peakId: number) {
     await removeFromBucketList(peakId);
     setBucketList((prev) => prev.filter((b) => b.peakId !== peakId));
+  }
+
+  function handleMarkedVisited(peakId: number, visited: boolean) {
+    if (visited) {
+      setBucketList((prev) => prev.filter((b) => b.peakId !== peakId));
+    }
   }
 
   if (loading) {
@@ -54,9 +61,16 @@ export function BucketListPage() {
               {b.elevationMeters ? ` · ${b.elevationMeters}m` : ""}
             </div>
           </div>
-          <button onClick={() => handleRemove(b.peakId)} className="btn btn-ghost">
-            Remove
-          </button>
+          <div style={{ display: "flex", gap: 12 }}>
+            <VisitedToggleButton
+              peakId={b.peakId}
+              initialVisited={false}
+              onChange={(visited) => handleMarkedVisited(b.peakId, visited)}
+            />
+            <button onClick={() => handleRemove(b.peakId)} className="btn btn-ghost">
+              Remove
+            </button>
+          </div>
         </div>
       ))}
     </div>
