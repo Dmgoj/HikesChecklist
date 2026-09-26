@@ -3,13 +3,16 @@ using HikesChecklist.Api.Dtos;
 using HikesChecklist.Api.Services;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Caching.Memory;
 
 namespace HikesChecklist.Api.Controllers;
 
 [ApiController]
 [Route("api/peaks")]
-public class PeaksController(AppDbContext db) : ControllerBase
+public class PeaksController(AppDbContext db, IMemoryCache cache) : ControllerBase
 {
+    private const string CountriesCacheKey = "peaks:countries";
+
     [HttpGet("search")]
     public async Task<ActionResult<PeakSearchResultDto>> Search(
         [FromQuery] string? q,
@@ -90,6 +93,11 @@ public class PeaksController(AppDbContext db) : ControllerBase
     [HttpGet("countries")]
     public async Task<ActionResult<IReadOnlyList<CountryOptionDto>>> GetCountries()
     {
+        if (cache.TryGetValue(CountriesCacheKey, out List<CountryOptionDto>? cached))
+        {
+            return Ok(cached);
+        }
+
         var codes = await db.Peaks
             .AsNoTracking()
             .Where(p => p.CountryCode != "")
@@ -101,6 +109,10 @@ public class PeaksController(AppDbContext db) : ControllerBase
             .Select(code => new CountryOptionDto(code, CountryNames.ByCode.GetValueOrDefault(code, code)))
             .OrderBy(c => c.Name)
             .ToList();
+
+        // The peaks table only changes via a manual ingestion run, never at request time,
+        // so a long cache duration is safe - a restart also clears it if ingestion ran meanwhile.
+        cache.Set(CountriesCacheKey, countries, TimeSpan.FromHours(6));
 
         return Ok(countries);
     }
